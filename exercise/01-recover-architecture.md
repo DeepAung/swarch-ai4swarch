@@ -38,15 +38,23 @@ evidence: system/online-boutique/protos/demo.proto, system/online-boutique/kuber
 
 | ผู้เรียก → ผู้ถูกเรียก | หลักฐานที่ AI อ้าง | ยืนยันแล้วหรือไม่ ✅ / ❌ / ❓ | สิ่งที่นิสิตพบ |
 |---|---|---|---|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+| End user → frontend | `frontend.yaml` (`frontend-external` LoadBalancer, port 80 → 8080; `httpGet /_healthz`) | ✅ | AI เช็คว่า Service kind ใช้ Type เป็น LoadBalancer ซึ่งถูกต้อง |
+| loadgenerator → frontend | `loadgenerator.yaml` (`FRONTEND_ADDR=frontend:80`, `wget http://${FRONTEND_ADDR}`) | ✅ | AI เช็คว่าใน script ของ loadgenerator pod มีการ wget frontend address ซึ่งก็ตรงกับ port ที่ `frontend.yaml` expose |
+| frontend → productcatalogservice | `frontend.yaml` (`PRODUCT_CATALOG_SERVICE_ADDR=productcatalogservice:3550`) | ✅ | ใน `system/online-boutique/src/frontend/main.go` มีการอ่าน `PRODUCT_CATALOG_SERVICE_ADDR` และนำมาใช้ในการสร้าง gRPC client conection |
+| checkoutservice → productcatalogservice | `checkoutservice.yaml` (`PRODUCT_CATALOG_SERVICE_ADDR`) | ✅ | ใน `system/online-boutique/src/checkoutservice/main.go` มีการอ่าน `PRODUCT_CATALOG_SERVICE_ADDR` และนำมาใช้สร้าง gRPC client connection |
+| recommendationservice → productcatalogservice | `recommendationservice.yaml` (`PRODUCT_CATALOG_SERVICE_ADDR=productcatalogservice:3550`) | ✅ | ใน `system/online-boutique/src/recommendationservice/recommendation_server.py` มีการอ่าน `PRODUCT_CATALOG_SERVICE_ADDR` และนำมาใช้สร้าง gRPC client connection |
 
-- **สิ่งที่ผิดหรือขาดหายไป** ใน Run B (dependency ที่ไม่มีจริง, dependency ที่ขาดไป, container ที่น่าสงสัย): …
+- **สิ่งที่ผิดหรือขาดหายไป** ใน Run B (dependency ที่ไม่มีจริง, dependency ที่ขาดไป, container ที่น่าสงสัย):
+  - `shoppingassistantservice`: `frontend.yaml` ตั้ง `SHOPPING_ASSISTANT_SERVICE_ADDR` และ `src/frontend/main.go` บังคับให้ต้องมีค่านี้ แต่ไม่มี manifest ของ service นี้ และไม่อยู่ใน diagram (AI ใส่ไว้แค่ใน Gaps)
+  - `loadgenerator`: AI วาดเป็น container ของระบบ แต่ถูก comment ออกจาก `kustomization.yaml`
+  - `COLLECTOR_SERVICE_ADDR`: `frontend` และ `checkoutservice` ใช้ส่ง tracing แต่ Run B ไม่มี (ไม่ได้เช็คว่าเปิดใช้จริงหรือไม่)
 
 ## สะท้อนคิด (ข้อละ 2–3 ประโยค)
 
 1. เปรียบเทียบ A กับ B: agent **ไม่สามารถ**รู้อะไรได้จากไฟล์ `.proto` เพียงไฟล์เดียว และเพราะเหตุใด
+
+- ไม่สามารถรู้ได้ว่า service ใด call service ใด เพราะในไฟล์ `.proto` บอกแค่ interface กลาง
+
 2. ข้อผิดพลาด**ข้อใดข้อหนึ่ง**ที่จะทำให้สมาชิกใหม่ของทีมเข้าใจผิดมากที่สุด หากเผยแพร่แผนภาพนี้โดยไม่ตรวจสอบ
+
+- ในแผนภาพ A ไม่ได้บอกว่า service มีการ call กันอย่างไร อาจทำให้เข้าใจผิดว่าแต่ละ service isolate ต่อกัน
