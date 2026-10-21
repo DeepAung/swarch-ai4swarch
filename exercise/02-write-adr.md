@@ -35,10 +35,10 @@ language: Thai
 
 | เกณฑ์ | Run a | Run b |
 |---|---|---|
-| ใช้ตัวเลขจาก scenario หรือไม่ (latency, ช่วงพีก, ข้อจำกัดของ MailFast) | | |
-| ทางเลือกที่พิจารณา (ระบุ) | | |
-| จัดการแต้มสะสมแบบ "ครั้งเดียวเท่านั้น" และ rate limit ของ MailFast หรือไม่ อย่างไร | | |
-| มีสิ่งที่แต่งขึ้นเองหรือไม่ (ตัวเลข เครื่องมือ หรือข้อเท็จจริงที่ไม่มีใน scenario) | | |
+| ใช้ตัวเลขจาก scenario หรือไม่ (latency, ช่วงพีก, ข้อจำกัดของ MailFast) | ไม่ | ใช่ |
+| ทางเลือกที่พิจารณา (ระบุ) | 1. Synchronous orchestration **2. Event-driven pub/sub ผ่าน message broker** 3. Async fire-and-forget ไม่มี broker | 1. Synchronous gRPC fan-out ใน `checkoutservice` 2. Async ภายใน `checkoutservice` (goroutine, retry ใน memory) **3. Publish `OrderPlaced` ไป RabbitMQ self-hosted, แต่ละ action เป็น consumer แยก** 4. Managed cloud queue/topic |
+| จัดการแต้มสะสมแบบ "ครั้งเดียวเท่านั้น" และ rate limit ของ MailFast หรือไม่ อย่างไร | ทำ idempotent consumption โดย AI คิด requirement ขึ้นมาเอง และมีคำถามว่า loyalty point ต้องเป็น exactly once หรือ at least once ใน open questions section | ทำ idempotent consumption ตาม requirement |
+| มีสิ่งที่แต่งขึ้นเองหรือไม่ (ตัวเลข เครื่องมือ หรือข้อเท็จจริงที่ไม่มีใน scenario) | มีการ assume ว่าคุยกับ MailFast ผ่าน HTTPS, คิดชื่อ microservice ขึ้นมาเอง | ไม่เจอ |
 
 ## รับผิดชอบ ADR ฉบับสุดท้ายของตัวเอง
 
@@ -51,6 +51,6 @@ language: Thai
 
 | # | สิ่งที่เปลี่ยนจากร่างของ AI | เหตุผล |
 |---|---|---|
-| 1 | | |
-| 2 | | |
-| 3 | | |
+| 1 | เปลี่ยน status จาก `Proposed` เป็น `Accepted` และใส่ชื่อตัวเองใน `Deciders` | เพราะผู้เขียนเป็นคนตัดสินใจ |
+| 2 | ลบ paragraph "Two numbers rule out the simple approach..." และ "Why: ..." ออก | ซ้ำกับที่ตาราง pros and cons และ "Facts from the scenario that constrain the decision" ที่มีอยู่แล้ว |
+| 3 | ลบ section "Open questions" และข้อความ "(today about 300 ms, so about 200 ms headroom)" ออก | ตอบคำถามและยอมรับ assumption แล้ว + headroom เป็นค่าที่ AI คิดขึ้นมา |
